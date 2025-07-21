@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    
     'mainapp',  # Your main application
 ]
 
@@ -50,6 +51,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 
 ROOT_URLCONF = 'molidty_server.urls'
 
@@ -125,3 +127,16 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+
+#CORS settings
+INSTALLED_APPS += ['corsheaders']
+
+MIDDLEWARE = ['corsheaders.middleware.CorsMiddleware'] + MIDDLEWARE
+
+CORS_ALLOW_ALL_ORIGINS = True  # For testing only
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:8000',
+    'http://localhost:20363',
+    'http://127.0.0.1:8000',
+]
+# end CORS settings
