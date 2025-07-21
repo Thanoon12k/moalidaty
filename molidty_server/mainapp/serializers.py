@@ -12,11 +12,14 @@ class WorkerSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class BudgetSerializer(serializers.ModelSerializer):
+    year_month = serializers.CharField(read_only=True)
     class Meta:
         model = Budget
         fields = '__all__'
 
+
 class ReceiptSerializer(serializers.ModelSerializer):
+    year_month_subscriber_id = serializers.CharField(read_only=True)
     class Meta:
         model = Receipt
         fields = '__all__'
