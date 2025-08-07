@@ -5,9 +5,14 @@ class Subscriber(models.Model):
     circuit_number = models.CharField(max_length=50, unique=False,default="0000", verbose_name="Circuit Number")
     Ambers = models.PositiveIntegerField(verbose_name="Ambers", default=0)
     phone = models.CharField(max_length=15, blank=True, null=True,default="07", verbose_name="Phone Number")
-
+    barcode_data = models.CharField(max_length=100, blank=True, null=True, verbose_name="Barcode Data",editable=False)
     def __str__(self):
         return self.name
+    def save(self, *args, **kwargs):
+        # Automatically set the barcode_data field based on the name and circuit_number fields
+        if not self.barcode_data:
+            self.barcode_data = f"CODE-{self.name}-{self.circuit_number}"
+        super().save(*args, **kwargs)
 
 class Worker(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Worker Name")
