@@ -54,4 +54,5 @@ class Receipt(models.Model):
         
         self.year_month_subscriber_id = f"{self.year}-{self.month:02d}-{self.subscriber.id}"
         super().save(*args, **kwargs)
-        Budget.objects.filter(year=self.year, month=self.month).update(paid_subscribers=models.F('paid_subscribers').union([self.subscriber]))
+        for budget in Budget.objects.filter(year=self.year, month=self.month):
+            budget.paid_subscribers.add(self.subscriber)
