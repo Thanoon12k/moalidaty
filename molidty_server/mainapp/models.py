@@ -7,8 +7,8 @@ class Subscriber(models.Model):
     Ambers = models.PositiveIntegerField(verbose_name="Ambers", default=0)
     phone = models.CharField(max_length=15, blank=True, null=True,default="07", verbose_name="Phone Number")
     barcode_data = models.CharField(max_length=100, blank=True, null=True, verbose_name="Barcode Data",editable=False)
-    date_subscribed = models.DateField(default=date.today, verbose_name="Date Subscribed")
-    date_created = models.DateTimeField(auto_now_add=True)
+    date_subscribed = models.DateField(default=date.today, verbose_name="Date Subscribed",blank=True,null=True)
+    date_created = models.DateTimeField(auto_now_add=True,blank=True,null=True)
     def __str__(self):
         return self.name
     def save(self, *args, **kwargs):
@@ -20,7 +20,7 @@ class Subscriber(models.Model):
 class Worker(models.Model):
     name = models.CharField(max_length=100, unique=True, verbose_name="Worker Name")
     phone = models.CharField(max_length=15, blank=True, null=True,default="07", verbose_name="Phone Number")
-    date_created = models.DateTimeField(auto_now_add=True)
+    date_created = models.DateTimeField(auto_now_add=True,blank=True,null=True)
 
     def __str__(self):
         return self.name
@@ -32,7 +32,7 @@ class Budget(models.Model):
     amber_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     paid_subscribers = models.ManyToManyField(Subscriber, blank=True, related_name="budgets_paid")
     unpaid_subscribers = models.ManyToManyField(Subscriber, blank=True, related_name="budgets_unpaid")
-    date_created = models.DateTimeField(auto_now_add=True)
+    date_created = models.DateTimeField(auto_now_add=True,blank=True,null=True)
 
     def __str__(self):
         return f"Budget for {self.year_month}"
@@ -52,8 +52,8 @@ class Receipt(models.Model):
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     worker = models.ForeignKey(Worker, on_delete=models.SET_NULL, related_name="receipts", null=True)
     image = models.ImageField(upload_to='receipts/', blank=True, null=True)
-    date_created = models.DateTimeField(auto_now_add=True)
-    date_received = models.DateField(default=date.today, verbose_name="Date Received")
+    date_created = models.DateTimeField(auto_now_add=True,blank=True,null=True)
+    date_received = models.DateTimeField(default=datetime.now,blank=True,null=True)
 
     def __str__(self):
         return f"Receipt for {self.subscriber.name} - {self.month} - ({self.amount_paid} IQD)"
