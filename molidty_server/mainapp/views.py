@@ -27,10 +27,19 @@ class WorkerRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 class BudgetListCreateView(generics.ListCreateAPIView):
     queryset = Budget.objects.all()
     serializer_class = BudgetSerializer
+    def perform_create(self, serializer):
+        try:
+            serializer.save()
+        except IntegrityError:
+            raise ValidationError({
+                "detail": "  Budget for this year and month already exists."
+            })
+        
 
 class BudgetRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Budget.objects.all()
     serializer_class = BudgetSerializer
+    
 
 # Receipt CRUD
 class ReceiptListCreateView(generics.ListCreateAPIView):
