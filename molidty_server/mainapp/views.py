@@ -1,7 +1,7 @@
 from django.db import IntegrityError
 from rest_framework import generics
-from .models import Subscriber, Worker, Budget, Receipt
-from .serializers import SubscriberSerializer, WorkerSerializer, BudgetSerializer, ReceiptSerializer
+from .models import ElectricGeneratorModel, Subscriber, Worker, Budget, Receipt
+from .serializers import *
 from rest_framework.views import exception_handler
 from django.db import IntegrityError
 from rest_framework.exceptions import ValidationError
@@ -57,3 +57,8 @@ class ReceiptListCreateView(generics.ListCreateAPIView):
 class ReceiptRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Receipt.objects.all()
     serializer_class = ReceiptSerializer
+
+
+class ElectricManagerList(generics.ListAPIView):
+    queryset = ElectricGeneratorModel.objects.all()
+    serializer_class = electricGeneratorModelSerializer

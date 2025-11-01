@@ -26,6 +26,7 @@ Thumbs.db
 */migrations/*.pyc
 */migrations/__pycache__/
 */migrations/*.sqlite3
+*/__pycache__/
 
 # Node modules (if using frontend tools)
 node_modules/

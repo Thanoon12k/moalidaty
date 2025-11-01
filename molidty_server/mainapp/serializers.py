@@ -1,9 +1,11 @@
 from django.db import IntegrityError
 from rest_framework.exceptions import ValidationError
 from rest_framework import serializers
-from .models import Subscriber, Worker, Budget, Receipt
+from .models import ElectricGeneratorModel, Subscriber, Worker, Budget, Receipt
 
 class SubscriberSerializer(serializers.ModelSerializer):
+    barcode_image=serializers.ImageField(read_only=True)
+    date_subscribed=serializers.DateField(read_only=True)
     class Meta:
         model = Subscriber
         fields = '__all__'
@@ -30,7 +32,12 @@ class BudgetSerializer(serializers.ModelSerializer):
 
 
 class ReceiptSerializer(serializers.ModelSerializer):
-    year_month_subscriber_id = serializers.CharField(read_only=True)
+    receipt_id = serializers.CharField(read_only=True)
+    date_received=serializers.DateTimeField(read_only=True)
     class Meta:
         model = Receipt
+        fields = '__all__'
+class electricGeneratorModelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ElectricGeneratorModel
         fields = '__all__'
