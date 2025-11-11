@@ -1,7 +1,7 @@
 from django.db import IntegrityError
 from rest_framework.exceptions import ValidationError
 from rest_framework import serializers
-from .models import ElectricGeneratorModel, Subscriber, Worker, Budget, Receipt
+from .models import MyManager, Subscriber, Worker, Budget, Receipt
 
 class SubscriberSerializer(serializers.ModelSerializer):
     barcode_image=serializers.ImageField(read_only=True)
@@ -37,7 +37,7 @@ class ReceiptSerializer(serializers.ModelSerializer):
     class Meta:
         model = Receipt
         fields = '__all__'
-class electricGeneratorModelSerializer(serializers.ModelSerializer):
+class ManagerSerializer(serializers.ModelSerializer):
     class Meta:
-        model = ElectricGeneratorModel
+        model = MyManager
         fields = '__all__'

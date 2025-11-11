@@ -1,14 +1,28 @@
 from django.db import IntegrityError
-from rest_framework import generics
-from .models import ElectricGeneratorModel, Subscriber, Worker, Budget, Receipt
+from rest_framework import generics,views
+from .models import MyManager, Subscriber, Worker, Budget, Receipt
 from .serializers import *
 from rest_framework.views import exception_handler
 from django.db import IntegrityError
 from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
+from django.urls import get_resolver
+from django.contrib.auth.hashers import check_password
+
 # Subscriber CRUD
+
+class RootView(views.APIView):
+    def get(self,request):
+        resolver=get_resolver()
+        urlsList={} 
+        for sub in resolver.url_patterns[1].url_patterns:
+            urlsList[sub.name]="http://localhost:8000/"+str(sub.pattern)
+        return Response(urlsList)
+
 class SubscriberListCreateView(generics.ListCreateAPIView):
     queryset = Subscriber.objects.all()
     serializer_class = SubscriberSerializer
+
 
 class SubscriberRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Subscriber.objects.all()
@@ -60,5 +74,15 @@ class ReceiptRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class ElectricManagerList(generics.ListAPIView):
-    queryset = ElectricGeneratorModel.objects.all()
-    serializer_class = electricGeneratorModelSerializer
+    queryset = MyManager.objects.all()
+    serializer_class = ManagerSerializer
+
+
+class ManagerListCreateView(generics.ListCreateAPIView):
+    queryset = MyManager.objects.all()
+    serializer_class = ManagerSerializer
+
+class ManagerRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = MyManager.objects.all()
+    serializer_class = ManagerSerializer
+

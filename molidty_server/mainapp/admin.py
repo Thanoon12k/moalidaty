@@ -4,7 +4,7 @@ admin.site.register(Subscriber)
 admin.site.register(Worker)
 admin.site.register(Receipt)
 admin.site.register(Budget)
-admin.site.register(ElectricGeneratorModel)
+admin.site.register(MyManager)
 
 
     
