@@ -1,8 +1,6 @@
 
     path('subscribers/', SubscriberListCreateView.as_view(), name='subscriber-list-create'),
     path('subscribers/<int:pk>/', SubscriberRetrieveUpdateDestroyView.as_view(), name='subscriber-detail'),
-    path('workers/', WorkerListCreateView.as_view(), name='worker-list-create'),
-    path('workers/<int:pk>/', WorkerRetrieveUpdateDestroyView.as_view(), name='worker-detail'),
     path('budgets/', BudgetListCreateView.as_view(), name='budget-list-create'),
     path('budgets/<int:pk>/', BudgetRetrieveUpdateDestroyView.as_view(), name='budget-detail'),
     path('receipts/', ReceiptListCreateView.as_view(), name='receipt-list-create'),
@@ -11,10 +9,15 @@
 
 
 ###
-GET http://localhost:8000/manager/ HTTP/1.1
+GET http://localhost:8000/workers/ HTTP/1.1
+Content-Type: application/json
 
+{
+    "generator": "4",
+    "password": "1111"
+}
 ###
-POST  http://localhost:8000/manager/login/ HTTP/1.1
+POST  http://localhost:8000/account/login/ HTTP/1.1
 Content-Type: application/json
 
 {

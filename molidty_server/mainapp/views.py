@@ -1,9 +1,8 @@
 from django.db import IntegrityError
-from rest_framework import generics,views
-from .models import MyManager, Subscriber, Worker, Budget, Receipt
+from rest_framework import generics, views
+from .models import *
 from .serializers import *
 from rest_framework.views import exception_handler
-from django.db import IntegrityError
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from django.urls import get_resolver
@@ -12,11 +11,12 @@ from django.contrib.auth.hashers import check_password
 # Subscriber CRUD
 
 class RootView(views.APIView):
-    def get(self,request):
-        resolver=get_resolver()
-        urlsList={} 
+    def get(self, request):
+        resolver = get_resolver()
+        urlsList = {}
         for sub in resolver.url_patterns[1].url_patterns:
-            urlsList[sub.name]="http://localhost:8000/"+str(sub.pattern)
+            path = str(sub.pattern).lstrip('/')
+            urlsList[sub.name] = request.build_absolute_uri('/' + path)
         return Response(urlsList)
 
 class SubscriberListCreateView(generics.ListCreateAPIView):
@@ -28,14 +28,6 @@ class SubscriberRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView)
     queryset = Subscriber.objects.all()
     serializer_class = SubscriberSerializer
 
-# Worker CRUD
-class WorkerListCreateView(generics.ListCreateAPIView):
-    queryset = Worker.objects.all()
-    serializer_class = WorkerSerializer
-
-class WorkerRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Worker.objects.all()
-    serializer_class = WorkerSerializer
 
 # Budget CRUD
 class BudgetListCreateView(generics.ListCreateAPIView):
@@ -63,9 +55,15 @@ class ReceiptListCreateView(generics.ListCreateAPIView):
         try:
             serializer.save()
         except IntegrityError:
+        
             raise ValidationError({
                 "detail": "Receipt for this subscriber and month already exists."
             })
+        except AttributeError:
+            raise ValidationError({
+                "detail": "no existense budget found  for this date year and month !! (create budget for year month first then try again)"
+            })
+            
             
 
 class ReceiptRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
@@ -73,16 +71,23 @@ class ReceiptRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = ReceiptSerializer
 
 
-class ElectricManagerList(generics.ListAPIView):
-    queryset = MyManager.objects.all()
-    serializer_class = ManagerSerializer
 
+class AccountListCreateView(generics.ListCreateAPIView):
+    queryset = Account.objects.all()
+    serializer_class = AccountSerializer
 
-class ManagerListCreateView(generics.ListCreateAPIView):
-    queryset = MyManager.objects.all()
-    serializer_class = ManagerSerializer
+class AccountRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Account.objects.all()
+    serializer_class = AccountSerializer
 
-class ManagerRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = MyManager.objects.all()
-    serializer_class = ManagerSerializer
+class WorkerListCreateView(generics.ListCreateAPIView):
+    
+    serializer_class = WorkerSerializer
+    def get_queryset(self):
+        print('body- ',self.request.body.decode())
+        # queryset = Worker.objects.all()
+        return Worker.objects.all()
 
+class WorkerRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Worker.objects.all()
+    serializer_class = WorkerSerializer

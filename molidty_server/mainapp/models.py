@@ -6,20 +6,21 @@ from django.db import models
 from datetime import datetime,date
 
 
-class MyManager(models.Model):
-    generator_name = models.CharField(max_length=100, unique=True, verbose_name="Generator Name")
-    phone = models.CharField(max_length=15,blank=False, null=False, verbose_name="Phone Number",help_text=" 077 xxx xxx xx")
-    password=models.CharField(max_length=100,blank=False, null=False,verbose_name="Password")
+class Account(models.Model):
+    generator_name = models.CharField(max_length=50, unique=True, verbose_name="Generator Name")
+    username = models.CharField(max_length=50, unique=True, verbose_name="User Name")
+    phone = models.CharField(max_length=15,blank=False,unique=True, null=False, verbose_name="Phone Number",help_text=" 077 xxx xxx xx")
+    password=models.CharField(max_length=50,blank=False, null=False,verbose_name="Password")
     date_created = models.DateTimeField(auto_now_add=True,blank=True,null=True)
     def __str__(self):
-        return self.generator_name
+        return self.username
     
     
     
     
 class Subscriber(models.Model):
-    generator=models.ForeignKey(MyManager, on_delete=models.CASCADE, related_name="subscribers",null=False,blank=False,verbose_name="Electric Generator Manager")
-    name = models.CharField(max_length=100, unique=False, verbose_name="Subscriber Name")
+    generator=models.ForeignKey(Account, on_delete=models.CASCADE, related_name="subscribers",null=False,blank=False,verbose_name="Electric Generator Account")
+    name = models.CharField(max_length=50, unique=False, verbose_name="Subscriber Name")
     circuit_number = models.CharField(max_length=50, unique=False,blank=False, null=False, verbose_name="Circuit Number")
     Ambers = models.PositiveIntegerField(verbose_name="Ambers", blank=False, null=False)
     phone = models.CharField(max_length=15, default="000", verbose_name="Phone Number",help_text=" 077 xxx xxx xx")
@@ -39,18 +40,9 @@ class Subscriber(models.Model):
         super().save(*args, **kwargs)
 
 
-class Worker(models.Model):
-    generator=models.ForeignKey(MyManager, on_delete=models.CASCADE, related_name="workers",null=False,blank=False,verbose_name="Electric Generator Manager")
-    name = models.CharField(max_length=100, unique=False, verbose_name="Worker Name")
-    phone = models.CharField(max_length=15, default="000", verbose_name="Phone Number",help_text=" 077 xxx xxx xx")
-    date_created = models.DateTimeField(auto_now_add=True,blank=True,null=True)
-    password=models.CharField(max_length=100,verbose_name="Password")
-    def __str__(self):
-        return self.name
-
 class Budget(models.Model):
-    generator=models.ForeignKey(MyManager, on_delete=models.CASCADE, related_name="budgets",null=False,blank=False,verbose_name="Electric Generator Manager")
-    budget_id = models.CharField(max_length=7, help_text="Format: generator-YYYY-MM", unique=True,auto_created=True)
+    generator=models.ForeignKey(Account, on_delete=models.CASCADE, related_name="budgets",null=False,blank=False,verbose_name="Electric Generator Account")
+    budget_uuid = models.CharField(max_length=7, help_text="Format: generator-YYYY-MM", unique=True,auto_created=True)
     year=models.PositiveIntegerField()
     month=models.PositiveIntegerField()
     amber_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
@@ -68,25 +60,26 @@ class Budget(models.Model):
     
 
 class Receipt(models.Model):
-    generator=models.ForeignKey(MyManager, on_delete=models.CASCADE, related_name="receipts",null=False,blank=False,verbose_name="Electric Generator Manager")
-    receipt_id = models.CharField(max_length=11, help_text="Format: generatorname-YYYY-MM-receiptid",unique=True)
+    generator=models.ForeignKey(Account, on_delete=models.CASCADE, related_name="receipts",null=False,blank=False,verbose_name="Electric Generator Account")
+    receipt_uuid = models.CharField(max_length=11, help_text="Format: generatorname-YYYY-MM-receiptid",unique=True)
     year=models.PositiveIntegerField()
     month=models.PositiveIntegerField()
     subscriber = models.ForeignKey(Subscriber, on_delete=models.CASCADE, related_name="receipts")
     amber_price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    worker = models.ForeignKey(Worker, on_delete=models.SET_NULL, related_name="receipts", null=True,blank=False)
     image = models.ImageField(upload_to='receipts/', blank=True, null=True)
     date_created = models.DateTimeField(auto_now_add=True,blank=True,null=True)
     date_received = models.DateTimeField(default=datetime.now,blank=True,null=True)
 
     def __str__(self):
         return f"Paid ({self.amount_paid} IQD)"
-    def save(self, *args, **kwargs):
-        
-        
-        self.year_month_subscriber_id = f"{self.generator}-{self.year}-{self.month:02d}-{self.subscriber.id}"
-        super().save(*args, **kwargs)
-        budget=Budget.objects.filter(year=self.year, month=self.month,generator=self.generator).first()
-        budget.paid_subscribers.add(self.subscriber)
-        budget.unpaid_subscribers.remove(self.subscriber)
+
+class Worker(models.Model):
+    generator=models.ForeignKey(Account, on_delete=models.CASCADE, related_name="workers",null=False,blank=False,verbose_name="Electric Generator Account")
+    username = models.CharField(max_length=50, unique=False, verbose_name="User Name")
+    phone = models.CharField(max_length=15,blank=False,unique=False, null=False, verbose_name="Phone Number",help_text=" 077 xxx xxx xx")
+    password=models.CharField(max_length=50,blank=False, null=False,verbose_name="Password")
+    date_created = models.DateTimeField(auto_now_add=True,blank=True,null=True)
+    def __str__(self):
+        return self.username
+    
