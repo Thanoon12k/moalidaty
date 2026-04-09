@@ -23,8 +23,8 @@ media/
 Thumbs.db
 
 # Migrations
-migrations/
 */migrations/*.pyc
+*/migrations/*.py
 */migrations/__pycache__/
 */migrations/*.sqlite3
 */__pycache__/
