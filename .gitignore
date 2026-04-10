@@ -1,43 +1,38 @@
-# Django
-*.pyc
+# Python
 __pycache__/
-db.sqlite3
-*.sqlite3
-*.log
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
 
-# Media and static files
-/media/
-/staticfiles/
-static/
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
 media/
+staticfiles/
 
 # Environment
 .env
-*.env
+.env.local
+.env.*.local
 
-# VS Code
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Editor
 .vscode/
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Migrations
-*/migrations/*.pyc
-*/migrations/*.py
-*/migrations/__pycache__/
-*/migrations/*.sqlite3
-*/__pycache__/
-
-# Node modules (if using frontend tools)
-node_modules/
-
-# Coverage reports
-htmlcov/
-.coverage
-*.cover
-
-# Other
+.idea/
 *.swp
 *.swo
 
+# OS
+.DS_Store
+Thumbs.db
+
+# Test artifacts
+test_api.py
+fix_passwords.py

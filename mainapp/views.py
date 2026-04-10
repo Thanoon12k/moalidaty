@@ -1,93 +1,183 @@
 from django.db import IntegrityError
-from rest_framework import generics, views
-from .models import *
-from .serializers import *
-from rest_framework.views import exception_handler
-from rest_framework.exceptions import ValidationError
+from rest_framework import generics, status
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from django.urls import get_resolver
-from django.contrib.auth.hashers import check_password
+from rest_framework.exceptions import ValidationError
 
-# Subscriber CRUD
+from .models import Account, Subscriber, Budget, Receipt, Worker
+from .serializers import (
+    AccountSerializer, SubscriberSerializer,
+    BudgetSerializer, ReceiptSerializer, WorkerSerializer,
+)
+from .permissions import IsGeneratorAuthenticated, IsAccountOnly
+from .receipt_generator import generate_receipt_image
 
-class RootView(views.APIView):
+
+# ─── Mixin: injects generator_id from the JWT into all queries ───────────────
+
+class _GeneratorScopeMixin:
+    """All querysets are automatically scoped to the authenticated generator."""
+
+    def _gid(self) -> int:
+        return int(self.request.user['generator_id'])
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx['request'] = self.request
+        return ctx
+
+
+# ─── Account ──────────────────────────────────────────────────────────────────
+
+class AccountProfileView(_GeneratorScopeMixin, APIView):
+    """GET / PATCH the authenticated generator's own profile."""
+    permission_classes = [IsAccountOnly]
+
     def get(self, request):
-        resolver = get_resolver()
-        urlsList = {}
-        for sub in resolver.url_patterns[1].url_patterns:
-            path = str(sub.pattern).lstrip('/')
-            urlsList[sub.name] = request.build_absolute_uri('/' + path)
-        return Response(urlsList)
+        account = Account.objects.get(pk=self._gid())
+        return Response(AccountSerializer(account).data)
 
-class SubscriberListCreateView(generics.ListCreateAPIView):
-    queryset = Subscriber.objects.all()
+    def patch(self, request):
+        account = Account.objects.get(pk=self._gid())
+        serializer = AccountSerializer(account, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+
+# ─── Subscribers ─────────────────────────────────────────────────────────────
+
+class SubscriberListCreateView(_GeneratorScopeMixin, generics.ListCreateAPIView):
     serializer_class = SubscriberSerializer
+    permission_classes = [IsGeneratorAuthenticated]
 
-
-class SubscriberRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Subscriber.objects.all()
-    serializer_class = SubscriberSerializer
-
-
-# Budget CRUD
-class BudgetListCreateView(generics.ListCreateAPIView):
-    queryset = Budget.objects.all()
-    serializer_class = BudgetSerializer
-    def perform_create(self, serializer):
-        try:
-            serializer.save()
-        except IntegrityError:
-            raise ValidationError({
-                "detail": "  Budget for this year and month already exists."
-            })
-        
-
-class BudgetRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Budget.objects.all()
-    serializer_class = BudgetSerializer
-    
-
-# Receipt CRUD
-class ReceiptListCreateView(generics.ListCreateAPIView):
-    queryset = Receipt.objects.all()
-    serializer_class = ReceiptSerializer
-    def perform_create(self, serializer):
-        try:
-            serializer.save()
-        except IntegrityError:
-        
-            raise ValidationError({
-                "detail": "Receipt for this subscriber and month already exists."
-            })
-        except AttributeError:
-            raise ValidationError({
-                "detail": "no existense budget found  for this date year and month !! (create budget for year month first then try again)"
-            })
-            
-            
-
-class ReceiptRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Receipt.objects.all()
-    serializer_class = ReceiptSerializer
-
-
-
-class AccountListCreateView(generics.ListCreateAPIView):
-    queryset = Account.objects.all()
-    serializer_class = AccountSerializer
-
-class AccountRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Account.objects.all()
-    serializer_class = AccountSerializer
-
-class WorkerListCreateView(generics.ListCreateAPIView):
-    
-    serializer_class = WorkerSerializer
     def get_queryset(self):
-        print('body- ',self.request.body.decode())
-        # queryset = Worker.objects.all()
-        return Worker.objects.all()
+        return Subscriber.objects.filter(
+            generator_id=self._gid(), is_active=True
+        )
 
-class WorkerRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Worker.objects.all()
+    def perform_create(self, serializer):
+        serializer.save(generator_id=self._gid())
+
+
+class SubscriberDetailView(_GeneratorScopeMixin, generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = SubscriberSerializer
+    permission_classes = [IsGeneratorAuthenticated]
+
+    def get_queryset(self):
+        return Subscriber.objects.filter(generator_id=self._gid())
+
+    def perform_destroy(self, instance):
+        # Soft-delete: keep data for historical receipts
+        instance.is_active = False
+        instance.save()
+
+
+# ─── Budgets ──────────────────────────────────────────────────────────────────
+
+class BudgetListCreateView(_GeneratorScopeMixin, generics.ListCreateAPIView):
+    serializer_class = BudgetSerializer
+    permission_classes = [IsAccountOnly]
+
+    def get_queryset(self):
+        return Budget.objects.filter(generator_id=self._gid())
+
+    def perform_create(self, serializer):
+        try:
+            serializer.save(generator_id=self._gid())
+        except IntegrityError:
+            raise ValidationError({'detail': 'الميزانية لهذا الشهر والسنة موجودة مسبقاً'})
+
+
+class BudgetDetailView(_GeneratorScopeMixin, generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = BudgetSerializer
+    permission_classes = [IsAccountOnly]
+
+    def get_queryset(self):
+        return Budget.objects.filter(generator_id=self._gid())
+
+
+# ─── Receipts ────────────────────────────────────────────────────────────────
+
+class ReceiptListCreateView(_GeneratorScopeMixin, generics.ListCreateAPIView):
+    serializer_class = ReceiptSerializer
+    permission_classes = [IsGeneratorAuthenticated]
+
+    def get_queryset(self):
+        qs = Receipt.objects.filter(
+            generator_id=self._gid()
+        ).select_related('subscriber', 'worker')
+
+        # Optional filters: ?year=2025&month=3&subscriber=7
+        for param in ('year', 'month', 'subscriber'):
+            val = self.request.query_params.get(param)
+            if val:
+                qs = qs.filter(**{param: val})
+        return qs
+
+    def perform_create(self, serializer):
+        try:
+            receipt = serializer.save(generator_id=self._gid())
+        except IntegrityError:
+            raise ValidationError(
+                {'detail': 'إيصال لهذا المشترك في هذا الشهر موجود مسبقاً'}
+            )
+        # Auto-generate receipt PNG image
+        try:
+            generate_receipt_image(receipt)
+        except Exception as exc:
+            # Image generation failure must not block receipt creation
+            import logging
+            logging.getLogger(__name__).warning(
+                'Receipt image generation failed for receipt %s: %s', receipt.id, exc
+            )
+
+
+class ReceiptDetailView(_GeneratorScopeMixin, generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = ReceiptSerializer
+    permission_classes = [IsGeneratorAuthenticated]
+
+    def get_queryset(self):
+        return Receipt.objects.filter(
+            generator_id=self._gid()
+        ).select_related('subscriber', 'worker')
+
+
+class ReceiptRegenerateImageView(_GeneratorScopeMixin, APIView):
+    """POST /receipts/{id}/image/ — regenerate the receipt PNG on demand."""
+    permission_classes = [IsGeneratorAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            receipt = Receipt.objects.get(pk=pk, generator_id=self._gid())
+        except Receipt.DoesNotExist:
+            return Response({'detail': 'الإيصال غير موجود'}, status=status.HTTP_404_NOT_FOUND)
+
+        generate_receipt_image(receipt)
+        url = request.build_absolute_uri(receipt.receipt_image.url)
+        return Response({'receipt_image_url': url})
+
+
+# ─── Workers ─────────────────────────────────────────────────────────────────
+
+class WorkerListCreateView(_GeneratorScopeMixin, generics.ListCreateAPIView):
     serializer_class = WorkerSerializer
+    permission_classes = [IsAccountOnly]
+
+    def get_queryset(self):
+        return Worker.objects.filter(generator_id=self._gid(), is_active=True)
+
+    def perform_create(self, serializer):
+        serializer.save(generator_id=self._gid())
+
+
+class WorkerDetailView(_GeneratorScopeMixin, generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = WorkerSerializer
+    permission_classes = [IsAccountOnly]
+
+    def get_queryset(self):
+        return Worker.objects.filter(generator_id=self._gid())
+
+    def perform_destroy(self, instance):
+        instance.is_active = False
+        instance.save()
