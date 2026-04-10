@@ -1,6 +1,6 @@
 from django.urls import path
 from .auth_views import (
-    AccountRegisterView, AccountLoginView,
+    AccountLoginView,
     WorkerLoginView, TokenRefreshView,
 )
 from .views import (
@@ -13,7 +13,7 @@ from .views import (
 
 urlpatterns = [
     # ── Auth ─────────────────────────────────────────────────────────────────
-    path('auth/register/',        AccountRegisterView.as_view(),  name='account-register'),
+    # NOTE: Account registration disabled — create accounts via Django admin only
     path('auth/account/login/',   AccountLoginView.as_view(),     name='account-login'),
     path('auth/worker/login/',    WorkerLoginView.as_view(),      name='worker-login'),
     path('auth/token/refresh/',   TokenRefreshView.as_view(),     name='token-refresh'),
